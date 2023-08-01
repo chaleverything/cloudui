@@ -1,4 +1,6 @@
 import { getCategoryList } from '../../../services/good/fetchCategoryList';
+import { getAllCategorys } from '../../../services/dataSource/category'
+
 Page({
   data: {
     list: [],
@@ -13,14 +15,18 @@ Page({
     //   console.error('err:', error);
     // }
     let that = this;
-    getApp().globalData.postApi('Categorys/GetAllCategorys', null).then((res) => {
-      //getApp().globalData.info(`ABC Then:${JSON.stringify(res)}`);
-      if (res.isSucc) {
-        that.setData({
-          list: res.data,
-        });
-      }
+    // getApp().globalData.postApi('Categorys/GetAllCategorys', null).then((res) => {
+    //   //getApp().globalData.info(`ABC Then:${JSON.stringify(res)}`);
+    //   if (res.isSucc) {
+    //     that.setData({
+    //       list: res.data,
+    //     });
+    //   }
+    // });
+    this.setData({
+      list: await getAllCategorys(),
     });
+    //console.log('B:' + JSON.stringify(getAllCategorys()));
   },
 
   onShow() {

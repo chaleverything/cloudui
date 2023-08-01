@@ -1901,6 +1901,7 @@ const allGoods = [
  * @param {number} [available] 库存, 默认1
  */
 export function genGood(id, available = 1) {
+ 
   const specID = ['135681624', '135681628'];
   if (specID.indexOf(id) > -1) {
     return allGoods.filter((good) => good.spuId === id)[0];

@@ -1,5 +1,5 @@
 import { fetchHome } from '../../services/home/home';
-import { getGoodsList } from '../../services/dataSource/goods';
+import { fetchGoodsList } from '../../services/good/fetchGoods';
 import Toast from 'tdesign-miniprogram/toast/index';
 
 Page({
@@ -81,6 +81,7 @@ Page({
     }
 
     this.setData({ goodsListLoadStatus: 1 });
+
     const pageSize = this.goodListPagination?.num || 0;
     let pageIndex = (this.privateData?.tabIndex || 0) * pageSize + (this.goodListPagination?.index || 0) + 1;
     if (fresh) {
@@ -88,10 +89,9 @@ Page({
     }
 
     try {
-      const lst = await getGoodsList({ pageIndex, pageSize });
-      getApp().globalData.info(`Home getGoodsList:${JSON.stringify(lst)}`);
+      const nextList = await fetchGoodsList(pageIndex, pageSize);
       this.setData({
-        goodsList: fresh ? lst : this.data.goodsList.concat(lst),
+        goodsList: fresh ? nextList : this.data.goodsList.concat(nextList),
         goodsListLoadStatus: 0,
       });
 

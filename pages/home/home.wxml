@@ -6,7 +6,7 @@
     <t-search
       t-class-input="t-search__input"
       t-class-input-container="t-search__input-container"
-      placeholder="iphone 13 火热发售中"
+      placeholder="【营养干贝】火爆上市"
       leftIcon=""
       disabled
     >

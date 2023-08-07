@@ -1,5 +1,9 @@
 /* eslint-disable no-param-reassign */
-import { getSearchResult } from '../../../services/good/fetchSearchResult';
+//import { getSearchResult } from '../../../services/good/fetchSearchResult';
+import { getGoodsResultList } from '../../../services/dataSource/goods';
+import {
+  increaseKeywordHistory,
+} from '../../../services/dataSource/keywordHistorys';
 import Toast from 'tdesign-miniprogram/toast/index';
 
 const initFilters = {
@@ -25,14 +29,14 @@ Page({
   },
 
   total: 0,
-  pageNum: 1,
+  pageIndex: 1,
   pageSize: 30,
 
-  onLoad(options) {
-    const { searchValue = '' } = options || {};
+  async onLoad(options) {
     this.setData(
       {
-        keywords: searchValue,
+        defKeywords: options?.defKeywords,
+        keywords: options?.searchValue,
       },
       () => {
         this.init(true);
@@ -42,30 +46,31 @@ Page({
 
   generalQueryData(reset = false) {
     const { filter, keywords, minVal, maxVal } = this.data;
-    const { pageNum, pageSize } = this;
+    const { pageIndex, pageSize } = this;
     const { sorts, overall } = filter;
     const params = {
       sort: 0, // 0 综合，1 价格
-      pageNum: 1,
+      pageIndex: 1,
       pageSize: 30,
       keyword: keywords,
+      sortBy: 'soldNum',
+      direction: "DESC"
     };
-
+    //console.log(`[sorts:${JSON.stringify(sorts)}][overall:${JSON.stringify(overall)}]`);
     if (sorts) {
-      params.sort = 1;
-      params.sortType = sorts === 'desc' ? 1 : 0;
-    }
-    if (overall) {
-      params.sort = 0;
+      params.sortBy = 'minSalePrice';
+      params.direction = sorts;
     } else {
-      params.sort = 1;
+      params.sortBy = 'soldNum';
+      params.direction = 'DESC';
     }
-    params.minPrice = minVal ? minVal * 100 : 0;
-    params.maxPrice = maxVal ? maxVal * 100 : undefined;
+
+    params.minSalePrice = minVal ? minVal * 100 : 0;
+    params.maxSalePrice = maxVal ? maxVal * 100 : undefined;
     if (reset) return params;
     return {
       ...params,
-      pageNum: pageNum + 1,
+      pageIndex: pageIndex + 1,
       pageSize,
     };
   },
@@ -79,13 +84,18 @@ Page({
       loading: true,
     });
     try {
-      const result = await getSearchResult(params);
-      const code = 'Success';
-      const data = result;
-      if (code.toUpperCase() === 'SUCCESS') {
-        const { spuList, totalCount = 0 } = data;
-        if (totalCount === 0 && reset) {
-          this.total = totalCount;
+      getGoodsResultList(params).then((res) => {
+        console.log('getGoodsResultList:' + JSON.stringify(res));
+        if (res) {
+          this.pageIndex = params.pageIndex || 1;
+          this.total = res.length + this.data.goodsList.length;
+          this.setData({
+            hasLoaded: res.length != 0,
+            loadMoreStatus: res.length == 0 ? 0 : 2,
+            loading: false,
+            goodsList: this.data.goodsList.concat(res),
+          });
+        } else {
           this.setData({
             emptyInfo: {
               tip: '抱歉，未找到相关商品',
@@ -95,29 +105,9 @@ Page({
             loading: false,
             goodsList: [],
           });
-          return;
         }
+      });
 
-        const _goodsList = reset ? spuList : goodsList.concat(spuList);
-        _goodsList.forEach((v) => {
-          v.tags = v.spuTagList.map((u) => u.title);
-          v.hideKey = { desc: true };
-        });
-        const _loadMoreStatus = _goodsList.length === totalCount ? 2 : 0;
-        this.pageNum = params.pageNum || 1;
-        this.total = totalCount;
-        this.setData({
-          goodsList: _goodsList,
-          loadMoreStatus: _loadMoreStatus,
-        });
-      } else {
-        this.setData({
-          loading: false,
-        });
-        wx.showToast({
-          title: '查询失败，请稍候重试',
-        });
-      }
     } catch (error) {
       this.setData({
         loading: false,
@@ -135,11 +125,20 @@ Page({
     });
   },
 
-  handleSubmit() {
+  async handleSubmit(e) {
+    let content = e.detail?.value;
+    if (!content) return;
+
+    let user = await getApp().globalData.user();
+    if (user?.openId) {
+      await increaseKeywordHistory({ openId: user.openId, content: content });
+    }
+
     this.setData(
       {
         goodsList: [],
         loadMoreStatus: 0,
+        keywords: content,
       },
       () => {
         this.init(true);

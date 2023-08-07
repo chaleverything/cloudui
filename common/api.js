@@ -16,7 +16,7 @@ export const getApi = async (route) => {
         }
       },
       fail: async (err) => {
-        console.log(err);
+        getApp().globalData.info(err);
         reject(err);
       },
       complete() { }
@@ -47,7 +47,7 @@ export const postApi = async (route, params) => {
         }
       },
       fail: async (err) => {
-        console.log(err);
+        getApp().globalData.info(err);
         reject(err);
       },
       complete: async () => { }

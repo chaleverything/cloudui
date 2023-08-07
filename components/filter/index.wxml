@@ -11,13 +11,13 @@
 				  prefix="wr"
 				  name="arrow_drop_up"
 				  size="18rpx"
-				  style="color:{{sorts === 'asc' ? color : '#bbb'}}"
+				  style="color:{{sorts === 'ASC' ? color : '#bbb'}}"
 				/>
 				<t-icon
 				  prefix="wr"
 				  name="arrow_drop_down"
 				  size="18rpx"
-				  style="color:{{sorts === 'desc' ? color : '#bbb'}}"
+				  style="color:{{sorts === 'DESC' ? color : '#bbb'}}"
 				/>
 			</view>
 		</view>

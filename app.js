@@ -1,3 +1,4 @@
+import { getUserInfo } from './services/auth/auth';
 import updateManager from './common/updateManager';
 import { info, warn, error } from './common/log';
 import { getApi, postApi } from './common/api';
@@ -8,6 +9,7 @@ import { base64Encode, base64Decode } from './common/coder';
 
 App({
   globalData: {
+    user: getUserInfo,
     info: info,
     warn: warn,
     error: error,

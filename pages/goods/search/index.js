@@ -3,11 +3,19 @@ import {
   getSearchPopular,
 } from '../../../services/good/fetchSearchHistory';
 
+import {
+  increaseKeywordHistory,
+  clearKeywordHistorys,
+  getKeywordHistorys,
+  getPopulars
+} from '../../../services/dataSource/keywordHistorys';
+
 Page({
   data: {
     historyWords: [],
     popularWords: [],
     searchValue: '',
+    defKeywords: '',
     dialog: {
       title: '确认删除当前历史记录',
       showCancelButton: true,
@@ -18,54 +26,75 @@ Page({
 
   deleteType: 0,
   deleteIndex: '',
+  async onLoad(options) {
+    //水印
+    this.setData({ defKeywords: options?.defKeywords });
 
+    // //历史搜索
+    // this.queryHistory();
+
+    // //热门搜索
+    // this.queryPopular();
+  },
   onShow() {
+    //历史搜索
     this.queryHistory();
+
+    //热门搜索
     this.queryPopular();
   },
 
+  async clearHistory() {
+    let user = await getApp().globalData.user();
+    if (user?.openId) {
+      clearKeywordHistorys({ openId: user.openId }).then(() => { });
+    }
+  },
+
   async queryHistory() {
-    try {
-      const data = await getSearchHistory();
-      const code = 'Success';
-      if (String(code).toUpperCase() === 'SUCCESS') {
-        const { historyWords = [] } = data;
-        this.setData({
-          historyWords,
-        });
-      }
-    } catch (error) {
-      console.error(error);
+    this.setData({
+      historyWords: []
+    });
+    let user = await getApp().globalData.user();
+    if (user?.openId) {
+      getKeywordHistorys({ openId: user.openId }).then((res) => {
+        if (res) {
+          this.setData({
+            //historyWords: res.map((item) => item.content),
+            historyWords: res
+          });
+        }
+      });
     }
   },
 
   async queryPopular() {
-    try {
-      const data = await getSearchPopular();
-      const code = 'Success';
-      if (String(code).toUpperCase() === 'SUCCESS') {
-        const { popularWords = [] } = data;
+    this.setData({
+      popularWords: []
+    });
+    getPopulars({ pageSize: 16 }).then((res) => {
+      //console.log('Populars:' + JSON.stringify(res));
+      if (res) {
         this.setData({
-          popularWords,
+          popularWords: res,
         });
       }
-    } catch (error) {
-      console.error(error);
-    }
+    });
   },
 
   confirm() {
-    const { historyWords } = this.data;
     const { deleteType, deleteIndex } = this;
-    historyWords.splice(deleteIndex, 1);
-    if (deleteType === 0) {
-      this.setData({
-        historyWords,
-        dialogShow: false,
-      });
-    } else {
-      this.setData({ historyWords: [], dialogShow: false });
+    if (deleteType === 1) {
+      //清理搜索
+      this.clearHistory();
+
+      //历史搜索
+      this.queryHistory();
+
+      //热门搜索
+      this.queryPopular();
     }
+    this.setData({ dialogShow: false, });
   },
 
   close() {
@@ -104,16 +133,20 @@ Page({
     const _searchValue = historyWords[dataset.index || 0] || '';
     if (_searchValue) {
       wx.navigateTo({
-        url: `/pages/goods/result/index?searchValue=${_searchValue}`,
+        url: `/pages/goods/result/index?searchValue=${_searchValue}&defKeywords=${this.data.defKeywords}`,
       });
     }
   },
 
-  handleSubmit(e) {
-    const { value } = e.detail.value;
-    if (value.length === 0) return;
+  async handleSubmit(e) {
+    let content = e.detail?.value;
+    if (!content) return;
+    let user = await getApp().globalData.user();
+    if (user?.openId) {
+      await increaseKeywordHistory({ openId: user.openId, content: content });
+    }
     wx.navigateTo({
-      url: `/pages/goods/result/index?searchValue=${value}`,
+      url: `/pages/goods/result/index?searchValue=${content}`,
     });
   },
 });
